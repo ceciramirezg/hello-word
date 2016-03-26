@@ -1,0 +1,184 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<h2>@ViewBag.Message</h2>
+<p>
+    To learn more about ASP.NET MVC visit <a href="http://asp.net/mvc" title="ASP.NET MVC Website">http://asp.net/mvc</a>.
+</p>
+
+<div id="remote">
+
+     <input id="txtsearch" class="typeahead" type="text" placeholder="search">
+  <input id="txtpeliculas" class="typeahead" type="text" placeholder="peliculas">
+  <input id="txtcountries" class="typeahead" type="text" placeholder="countries">
+
+ 
+</div>
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+
+        var movies = new Bloodhound({
+            datumTokenizer: function (datum) {
+                return Bloodhound.tokenizers.whitespace(datum.value);
+            },
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            remote: {
+                url: 'http://api.themoviedb.org/3/search/movie?query=%QUERY&api_key=470fd2ec8853e25d2f8d86f685d2270e',
+                filter: function (movies) {
+                    return $.map(movies.results, function (movie) {
+                        return {
+                            value: movie.original_title
+                        };
+                    });
+                }
+            }
+        });
+
+        // Initialize the Bloodhound suggestion engine
+        movies.initialize();
+
+        // Instantiate the Typeahead UI
+        $('#txtpeliculas').typeahead(null, {
+            displayKey: 'value',
+            source: movies.ttAdapter()
+        });
+
+
+
+         var urlcountries = '/Home/CountryLookup';
+
+            var countries = new Bloodhound({
+                datumTokenizer: function (datum) {
+                    return Bloodhound.tokenizers.whitespace(datum.value);
+                },
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                remote: {
+                   url: urlcountries,
+                    filter: function (countries) {
+                        return $.map(countries, function (countrie) {
+                            return {
+                                value: countrie.Name
+                            };
+                        });
+                    }
+                }
+            });
+
+            // Initialize the Bloodhound suggestion engine
+            countries.initialize();
+
+    
+            // Instantiate the Typeahead UI
+            $('#txtcountries').typeahead(null, {
+                displayKey: 'value',
+                source: countries.ttAdapter()
+            });
+
+            
+            
+            //Buscador nuevo
+
+            var urlsearch = '/Home/GetSearch' + '?query=%QUERY&type=%TYPE';
+
+            var searchnew = new Bloodhound({
+                datumTokenizer: function (datum) {
+                    return Bloodhound.tokenizers.whitespace(datum.Name);
+                },
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                remote: {
+                    url: urlsearch,
+                    replace: function (url, query) {
+                        var val = '1';
+                        return url.replace('%QUERY', query).replace('%TYPE', val);
+                    },
+                    filter: function (data) {
+                        return $.map(data.Assets, function (obj) {
+                            return {
+                                value: obj.Name,
+                                code: obj.Code,
+                            };
+                        });
+                    }
+                }
+            });
+
+
+               var searchusers = new Bloodhound({
+                datumTokenizer: function (datum) {
+                    return Bloodhound.tokenizers.whitespace(datum.Name);
+                },
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                remote: {
+                    url: urlsearch,
+                    replace: function (url, query) {
+                        var val = '1';
+                        return url.replace('%QUERY', query).replace('%TYPE', val);
+                    },
+                    filter: function (data) {
+                        return $.map(data.Users, function (obj) {
+                            return {
+                                value: obj.Name,
+                                code: obj.Id,
+                            };
+                        });
+                    }
+                }
+            });
+
+
+
+            // Initialize the Bloodhound suggestion engine
+            searchnew.initialize();
+            searchusers.initialize();
+
+            // Instantiate the Typeahead UI
+            $('#txtsearch').typeahead(null, {
+                name: 'Assets',               
+                limit: 3,
+                displayKey: 'value',
+                source: searchnew.ttAdapter(),
+                templates: {
+                 header: '<h3>Assets</h3>',
+                 empty: [
+                  '<div class="empty-message">',
+                  'no results found',
+                  '</div>'
+                ].join('\n'),
+                suggestion: function(data){
+                  return '<p><strong>' + data.code + '</strong> - ' + data.value + '</p>';
+                }
+                }
+            },            
+            {
+                name: 'Users',              
+                limit: 3,
+                displayKey: 'value',
+                source: searchusers.ttAdapter(),
+                templates: {
+                 header: '<h3>Users</h3>',
+                 empty: [
+                  '<div class="empty-message">',
+                  'no results found',
+                  '</div>'
+                ].join('\n'),
+                suggestion: function(data){
+                  return '<p><strong>' + data.code + '</strong> - ' + data.value + '</p>';
+                }
+                }
+            }).on('typeahead:selected', function (obj, data) {
+
+	            //alert(data.value);
+                  $('#txtsearch').typeahead('val', '');
+
+	        }).on('typeahead:closed', function () {
+	            $('#txtsearch').typeahead('val', '');
+	        });
+	  
+    });
+
+
+</script>
